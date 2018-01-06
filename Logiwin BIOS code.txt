@@ -1,0 +1,246 @@
+; BIOS code
+_const:
+                ;    ERROR 100: root directory not found.
+               F[CD]  0x9
+                [CE]  "ERRO"
+                [CF]  "R 10"
+                [D0]  "0: r"
+                [D1]  "oot "
+                [D2]  "dire"
+                [D3]  "ctor"
+                [D4]  "y no"
+                [D5]  "t fo"
+                [D6]  "und."
+                    
+                ;    ERROR 101: "boot" directory not found on "/".
+                [D7]  0xC      ; Text word length
+                [D8]  "ERRO"
+                [D9]  "R 10"
+                [DA]  "1: ""
+                [DB]  "boot"
+                [DC]  "" di"
+                [DD]  "rect"
+                [DE]  "ory "
+                [DF]  "not "
+                [E0]  "foun"
+                [E1]  "d on"
+                [E2]  " "/""
+                [E3]  "."
+                    
+                ;    ERROR 102: "boot.exe" file not found on "/boot".
+                [E4]  0xC      ; Text word length
+                [E5]  "ERRO"
+                [E6]  "R 10"
+                [E7]  "2: ""
+                [E8]  "boot"
+                [E9]  ".exe"
+                [EA]  "" fi"
+                [EB]  "le n"
+                [EC]  "ot f"
+                [ED]  "ound"
+                [EE]  " on "
+                [EF]  ""/bo"
+                [F0]  "ot"."
+                    
+                [F1]  "dir"     ; These 3 to check the root directory
+                [F2]  0x1
+                [F3]  "root"
+                
+                [F4]  "dir"     ; boot directory
+                [F5]  0x1
+                [F6]  "boot
+                
+                [F7]  "exe"     ; boot executable
+                [F8]  0x1
+                [F9]  "boot"
+
+
+                        ; Checks if the Root directory exists
+_start:        F[00]  NOP #0x000000
+                [01]  NOP #0x000000
+                [02]  NOP #0x000000
+               F[03]  ACC 0x0000FA      ; Load the root extension
+                [04]  CMP 0x0000F1      ; Compare with "dir"
+                [05]  JNE _rootDirNotFound
+                [06]  ACC 0x0000FB      ; root filename length
+                [07]  CMP 0x0000F2      ; 1
+                [08]  JNE _rootDirNotFound
+                [09]  ACC 0x0000FC      ; root filename
+                [0A]  CMP 0x0000F3      ; "root"
+                [0B]  JNE _rootDirNotFound
+                
+                        ; Find "boot" dir
+                [0C]  PSH #0x000012     ; Return Address (Call-like) 
+                [0D]  PSH #0x0000FF     ; root directory data size Address
+                [0E]  PSH 0x0000F4      ; "dir" extension
+                [0F]  PSH 0x0000F5      ; 1 = filename length in words
+                [10]  PSH #0x0000F6     ; First Address of the string (which is the only Address, as "boot" is 4 chars long (1 word))
+                [11]  JMP _searchFile
+                [12]  JZ _bootDirNotFound
+                        
+                        ; Find "boot" executable
+                [13]  PSH #0x000016     ; Return Address (Call-like)
+                [14]  PSH 0x000000      ; Push Accumulator content ("boot" dir first Address)
+                [15]  JMP _getFileDataSizeAddress
+                [16]  PSH #0x00001C   ; RET 0x000000urn Address (Call-like)
+                [17]  PSH 0x000000    ; Address of the boot directory data size, already on Accumulator (given by previous sub-routine called)
+                [18]  PSH 0x0000F7    ; "exe" extension
+                [19]  PSH 0x0000F8    ; 1 = filename length in words
+                [1A]  PSH #0x0000F9   ; First Address of the string (which is the only Address, as "boot" is 4 chars long)
+                [1B]  JMP _searchFile
+                [1C]  JZ _bootExeNotFound
+                [1D]  JMP _foundBootExe
+
+
+; _getFileDataSizeAddress(fileAddress):
+;
+;   Given the starting Address of a file, will RET 0x000000urn by the Accumulator the Address of the "Data Size" header of this file.
+;
+; Variables
+;   0x40000A = Current Address
+;
+
+_getFileDataSizeAdrs 1B000000 4240000C 4240000B
+8140000C A140000B 0240000D 8140000C 81000000 C3000000 1C40000C 8140000C
+A540000D 13000054 1B000000 4100005F C10000CD 410000CE 0800004E 0800006A
+41000064 C10000D7 410000D8 0800004E 0800006A 41000069 C10000E4 410000E5
+0800004E 0800006A 00000000 0800006A 88000000 96*0 00000009 4552524F
+52203130 303A2072 6F6F7420 64697265 63746F72 79206E6F 7420666F 756E642E
+0000000C 4552524F 52203130 313A2022 626F6F74 22206469 72656374 6F727920
+6E6F7420 666F756E 64206F6E 20222F22 2E000000 0000000C 4552524F 52203130
+323A2022 626F6F74 2E657865 22206669 6C65206E 6F742066 6F756E64 206F6E20
+222F626F 6F74222E 64697200 00000001 726F6F74 64697200 00000001 0
+65786500 00000001 626F6F74 : 
+                [1E]  POP #0x40000A
+                [1F]  INC #0x40000A ; Now the Address points to the filename length
+                [20]  ACC 0x40000A ; Load it on Accumulator
+                [21]  ACC 0x000000 ; Loads the filename length to Accumulator
+                [22]  ADD 0x40000A ; Add the Address by the number of filename words (if filename words == 1, skip by 1)
+                [23]  ADD #0x000002 ; Skip the Parent Address and Flags
+                [24]  RET 0x000000
+
+
+
+;
+; searchFile(targetParentDataSizeAddress, desiredExtension, desiredFilenameWords, desiredFilenameAddress)
+;
+;   Returns by the Accumulator the starting Address of the found file, else RET 0x000000urns 0
+;
+; Variables
+;   0x400000 = Current File Address in directory of the searchen file
+;   0x400001 = Maximum File Address in directory of the searchen file
+;
+;   0x400002 = desiredExtension;
+;   0x400003 = desiredFilenameLength;
+;   0x400004 = desiredFilenameFirstAddress
+;
+;   0x400005 = currentAddressHeaderFile
+;   0x400006 = counterFilenameLength
+;   0x400007 = currentAddressDesiredFilename
+;   0x400008 = currentContentDesiredFilename
+;
+
+_searchFile:    [25]  POP #0x400004    ; desiredFilenameFirstAddress;
+                [26]  POP #0x400003    ; desiredFilenameLength;
+                [27]  POP #0x400002    ; desiredExtension;
+                [28]  POP #0x400000    ; ParentDataSizeAddress, store it on Accumulator
+                [29]  ACC 0x400000    ; Store this Address as the starting Address to look at (-1)
+                [2A]  ACC 0x000000    ; Get the content of the Address, the root data size, default = 32
+                [2B]  ADD 0x400000    ; Add the initial Address, to get the maximum Address to look for
+                [2C]  STO #0x400001    ; Store it at 0x400001 (Maximum Address in directory of the searchen file)
+                
+    ; Checks if the Address is in boundaries
+.loopNextFile:  
+                [2D]  INC #0x400000    ; Actual File Address ++
+                [2E]  ACC 0x400000    ; Move it to Accumulator
+                [2F]  CMP 0x400001    ; Compare it with max Address
+                [30]  JG .fileNotFound   ; If current Address > max Address
+                
+                        ; Checks if the Address of the file in the directory is 0 (end of file of a directory)
+                [31]  ACC 0x000000    ; Acc = Address of the file, inside the actual directory
+                [32]  JZ .fileNotFound
+                    
+                        ; Compares the extension
+                [33]  STO #0x400005    ; startingAddressCurrentFile
+                [34]  ACC 0x000000    ; Get the content of given Address (Acc <- First content of file = Address of the file of the current root directory data)
+                [35]  CMP 0x400002    ; Compare with the target filename extension    
+                [36]  JNE .loopNextFile
+                
+                        ; Compares the filename length
+                [37]  INC #0x400005     ; Increase the Address for the next header information, the filename length
+                [38]  ACC 0x400005      ; Load this Address to Accumulator.
+                [39]  ACC 0x000000      ; Load the content of this Address
+                [3A]  CMP 0x400003      ; Compare with the target filename length
+                [3B]  JNE .loopNextFile
+                [3C]  STO #0x400006     ; Stores the counter of the filename length for the next step
+                
+                [3D]  ACC 0x400004      ; desiredFilenameFirstAddress
+                [3E]  STO #0x400007     ; currentAddressDesiredFilename
+                    
+                    ; Compares the filename
+.compFilename:      
+                [3F]  INC #0x400005     ; Increase the Address for the next header information, the filename
+                [40]  ACC 0x400007      ; Load the desired Filename Address
+                [41]  ACC 0x000000      ; Load the content of this Address
+                [42]  STO #0x400008     ; Store the content
+                [43]  ACC 0x400005      ; Load to the Accumulator the Address of header
+                [44]  ACC 0x000000      ; Load to the Accumulator the content of its Address
+                [45]  CMP 0x400008      ; Compare with the header 
+                [46]  JNE _loopBootDir
+                [47]  DEC #0x400006     ; Decreases the counter
+                [48]  ACC 0x400006
+                [49]  JNZ .compFilename
+                [4A]  ACC 0x400000     ; fileFound      
+                [4B]  RET 0x000000
+                
+.fileNotFound:
+                [4C]  ACC #0x000000
+                [4D]  RET 0x000000
+                
+; _print(lengthWords, startingAddress)
+;
+; Variables
+;   0x40000B = Length Words
+;   0x40000C = Current Address
+;   0x40000D = Max Address
+;
+_printText:     [4E]  POP #0x40000C    ; Pop Current Address
+                [4F]  POP #0x40000B    ; Pop Length Words
+                [50]  ACC 0x40000C
+                [51]  ADD 0x40000B
+                [52]  STO #0x40000D
+                [53]  ACC 0x40000C
+.loop:          [54]  ACC 0x000000
+                [55]  TXT 0x000000
+                [56]  INC #0x40000C
+                [57]  ACC 0x40000C
+                [58]  CMP 0x40000D
+                [59]  JL .loop
+                [5A]  RET 0x000000
+                
+_rootDirNotFound:
+                [5B]  PSH #0x00005F     ; Push return location
+                [5C]  PSH 0x0000CD      ; Push words amount
+                [5D]  PSH #0x0000CE     ; Push starting Address
+                [5E]  JMP _printText
+                [5F]  JMP _deadEnd
+
+_bootDirNotFound:
+                [60]  PSH #0x000064     ; Push return location
+                [61]  PSH 0x0000D7      ; Push words amount
+                [62]  PSH #0x0000D8     ; Push starting Address
+                [63]  JMP _printText
+                [64]  JMP _deadEnd
+
+_bootExeNotFound:
+                [65]  PSH #0x000069     ; Push return location
+                [66]  PSH 0x0000E4      ; Push words amount
+                [67]  PSH #0x0000E5     ; Push starting Address
+                [68]  JMP _printText
+                [69]  JMP _deadEnd
+                
+_deadEnd:       [6A]  NOP #0x000000
+                [6B]  JMP _deadEnd
+
+_foundBootExe:
+                [6C]  JMP 0x000000

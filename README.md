@@ -1,1 +1,1 @@
-Logisim GitHub
+For the full documentation, read the "Logiwin vX.X.X Documentation(README).txt" file.
