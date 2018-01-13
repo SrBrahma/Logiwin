@@ -1,4 +1,12 @@
 ; BIOS code
+; By Henrique Bruno Fantauzzi de Almeida, Rio de Janeiro - RJ - Brazil
+;   (aka SrBrahma!)
+; To be compiled with "logiwinLASMcompiler.py", my code for Python Script, for Notepad++
+; https://github.com/SrBrahma/NotepadPlusPlus-Plugins/tree/master/Python%20Script
+; 
+; Written to be used on Logiwin, my Logisim computer project.
+; https://github.com/SrBrahma/Logiwin (more info about it on its Readme)
+;
 
 _global:
                 ;    ERROR 100: root directory not found.
