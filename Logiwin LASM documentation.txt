@@ -1,2 +1,82 @@
 LASM - Logiwin Assembly:
+ Basic code structure:
+ 
 1) Labels
+    a) Variables labels: Are used to assign variables names to a Address and a value (if wanted).
+        _global: used to assign global variables, which can be accessed anywhere.
+        _local: used to assign local variables, which can only be accessed by the the caller:
+            Ex: _global:
+                $counter: V[400003]
+                $g_counter: V[400004]
+                
+                _local:
+                $counter: V[400001]
+                _anyLabel:  [49]  ADD &counter       ; Will use the [400001] address, as it was found on the previous label.
+                            [4A]  ADD &g_counter     ; Adds the global g_counter, as it was only found on global variables labels.
+                
+                You can have multiple _local and _global labels.
+        _start: will be used to fix the following address to 0.
+    b) General labels: can be freely named and used to be called by instructions, like:
+            Ex: _loop4:         [10]  INC &counter
+                                [11]  CMP 0d10
+                                [12]  JNE _loop4
+            Which [12] will be converted to:
+                                [12]  JNE #0x10
+                                
+        You can also create local labels, which must be below the global labels, and can only be accessed by the callers within this global label. Ex:
+                _assignMem:     [75]  CMP 0d100
+                                [76]  JLE .loop
+                                [77~...]  ...
+                .loop:          [90]  ...
+                
+    c) Both types acts similarly.
+    
+2) Address
+    F[0] - This address is fixed
+     [X] - Whatever the content, it will be the content of the previous + 1.
+     {X} - Useful to create volative variables. These by default, starts at Address 0x400000, the Address where the RAM starts. These are removed on compilation.
+    
+3) Variables
+    ADD #0d10   ; Adds the value 10 (decimal) to the Accumulator.
+    ADD 0x10    ; Adds the content of the Address 0x10 (hexadecimal) to the Accumulator.
+NUMBER:  [13] 0d999
+    ADD &NUMBER ; Adds the Address of the variable NUMBER ( = 0x13) to the Accumulator.
+        Will be converted to:
+        ADD #0x13
+    ADD NUMBER  ; Adds the content of the variable NUMBER ( = 0d999) to the Accumulator.
+        Will be converted to:
+        ADD 0x13
+    The code will look for variables called, then will search the previous global label (the label containing this caller),
+        and the previous not named _local label from it. Then will search for the _local label. If not found, will look for _global labels,
+        and see if they have this variable. Else, will return an error.
+4) STO &variable or STO variable?
+    As the main documentation says, STO, POP, and other ambiguos instructions, should use the # notation, ex STO #0x10 to store to the Address 0x10.
+    Following the previous section, & is converted to #, so when you come to the doubt of using & or not, think about using the # or not.
+
+5)    
+Recursive function
+
+            PSH .retMain
+            PSH #0d2
+            PSH #0d5
+            JMP _power
+.retMain    continue...
+
+
+; power(signed base, signed expoent)
+; 0x1 = base
+; 0x2 = expoent
+            POP #0x2 ; expoent
+            POP #0x1 ; base
+            ACC expoent
+            CMP #0d0
+            JG .greater
+.zero       ACC #0x1
+            RET
+.greater:
+            PSH .retPow
+            PSH 0x1
+            SUB #0x1
+            PSH 0x2
+            JMP _power
+.retPow:    MUL 0x1

@@ -1,135 +1,140 @@
 #; To be used with my Python Script for Notepad++, the Multiple Replacer
 #; Github: https://github.com/SrBrahma/NotepadPlusPlus-Plugins
 
-"NOP #0x" 00
+"(?<=[\s\]])NOP[ \t]+#(0x)?" 00
+"(?<=[\s\]])NOP[ \t]+" 00
 
-"ACC #0x" 01
-"ACC 0x" 81
+#; If a NOP without anything to the right of it...
+"(?<=[\s\]])NOP(\s|\Z)+$" 00000000
 
-"STO #0x" 02
-"ERS #0x" 03
-"SWP #0x" 04
+"(?<=[\s\]])ACC[ \t]+#(0x)?" 01
+"(?<=[\s\]])ACC[ \t]+" 81
 
-"CAL #0x" 07
+"(?<=[\s\]])STO[ \t]+#(0x)?" 02
+"(?<=[\s\]])ERS[ \t]+#(0x)?" 03
+"(?<=[\s\]])SWP[ \t]+#(0x)?" 04
 
-"JMP #0x" 08
-"JMP 0x" 88
+"(?<=[\s\]])CAL[ \t]+#(0x)?" 07
 
-"JZ #0x" 09
-"JZ 0x" 89
+"(?<=[\s\]])JMP[ \t]+#(0x)?" 08
+"(?<=[\s\]])JMP[ \t]+" 88
 
-"JNZ #0x" 0A
-"JNZ 0x" 8A
+"(?<=[\s\]])JZ[ \t]+#(0x)?" 09
+"(?<=[\s\]])JZ[ \t]+" 89
 
-"JC #0x" 0B
-"JC 0x" 8B
+"(?<=[\s\]])JNZ[ \t]+#(0x)?" 0A
+"(?<=[\s\]])JNZ[ \t]+" 8A
 
-"JNC #0x" 0C
-"JNC 0x" 8C
+"(?<=[\s\]])JC[ \t]+#(0x)?" 0B
+"(?<=[\s\]])JC[ \t]+" 8B
 
-"JA #0x" 0D
-"JA 0x" 8D
+"(?<=[\s\]])JNC[ \t]+#(0x)?" 0C
+"(?<=[\s\]])JNC[ \t]+" 8C
 
-"JAE #0x" 0E
-"JAE 0x" 8E
+"(?<=[\s\]])JA[ \t]+#(0x)?" 0D
+"(?<=[\s\]])JA[ \t]+" 8D
 
-"JG #0x" 0F
-"JG 0x" 8F
+"(?<=[\s\]])JAE[ \t]+#(0x)?" 0E
+"(?<=[\s\]])JAE[ \t]+" 8E
 
-"JGE #0x" 10
-"JGE 0x" 90
+"(?<=[\s\]])JG[ \t]+#(0x)?" 0F
+"(?<=[\s\]])JG[ \t]+" 8F
 
-"JE #0x" 11
-"JE 0x" 91
+"(?<=[\s\]])JGE[ \t]+#(0x)?" 10
+"(?<=[\s\]])JGE[ \t]+" 90
 
-"JNE #0x" 12
-"JNE 0x" 92
+"(?<=[\s\]])JE[ \t]+#(0x)?" 11
+"(?<=[\s\]])JE[ \t]+" 91
 
-"JL #0x" 13 
-"JL 0x" 93
+"(?<=[\s\]])JNE[ \t]+#(0x)?" 12
+"(?<=[\s\]])JNE[ \t]+" 92
 
-"JLE #0x" 14
-"JLE 0x" 94
+"(?<=[\s\]])JL[ \t]+#(0x)?" 13 
+"(?<=[\s\]])JL[ \t]+" 93
 
-"JL #0x" 15
-"JL 0x" 95
+"(?<=[\s\]])JLE[ \t]+#(0x)?" 14
+"(?<=[\s\]])JLE[ \t]+" 94
 
-"JLE #0x" 16
-"JLE 0x" 96
+"(?<=[\s\]])JL[ \t]+#(0x)?" 15
+"(?<=[\s\]])JL[ \t]+" 95
+
+"(?<=[\s\]])JLE[ \t]+#(0x)?" 16
+"(?<=[\s\]])JLE[ \t]+" 96
 
 #; 17 ~ 1A reserved
 
-"RET 0x" 1B
+"(?<=[\s\]])RET[ \t]+" 1B
+#; If a RET without anything to the right of it...
+"(?<=[\s\]])RET(\s|\Z)+$" 1B000000
 
+"(?<=[\s\]])INC[ \t]+#(0x)?" 1C
+"(?<=[\s\]])DEC[ \t]+#(0x)?" 1D
 
-"INC #0x" 1C
-"DEC #0x" 1D
+"(?<=[\s\]])SCA[ \t]+" 1E
 
-"SCA 0x" 1E
+"(?<=[\s\]])SRA[ \t]+#(0x)?" 1F
+"(?<=[\s\]])SRA[ \t]+" 9F
 
-"SRA #0x" 1F
-"SRA 0x" 9F
+"(?<=[\s\]])RND[ \t]+#(0x)?" 40
 
-"RND #0x" 40
+"(?<=[\s\]])PSH[ \t]+#(0x)?" 41 
+"(?<=[\s\]])PSH[ \t]+" C1
 
-"PSH #0x" 41 
-"PSH 0x" C1
+"(?<=[\s\]])POP[ \t]+#(0x)?" 42
 
-"POP #0x" 42
+"(?<=[\s\]])TXT[ \t]+#(0x)?" 43
+"(?<=[\s\]])TXT[ \t]+" C3
 
-"TXT #0x" 43
-"TXT 0x" C3
+"(?<=[\s\]])KEY[ \t]+#(0x)?" 47
+"(?<=[\s\]])JOY[ \t]+#(0x)?" 49
 
-"KEY #0x" 47
-"JOY #0x" 49
+"(?<=[\s\]])ADD[ \t]+#(0x)?" 21
+"(?<=[\s\]])ADD[ \t]+" A1
 
-"ADD #0x" 21
-"ADD 0x" A1
+"(?<=[\s\]])SUB[ \t]+#(0x)?" 22
+"(?<=[\s\]])SUB[ \t]+" A2
 
-"SUB #0x" 22
-"SUB 0x" A2
+"(?<=[\s\]])MUL[ \t]+#(0x)?" 23
+"(?<=[\s\]])MUL[ \t]+" A3
 
-"MUL #0x" 23
-"MUL 0x" A3
+"(?<=[\s\]])DIV[ \t]+#(0x)?" 24
+"(?<=[\s\]])DIV[ \t]+" A4
 
-"DIV #0x" 24
-"DIV 0x" A4
+"(?<=[\s\]])CMP[ \t]+#(0x)?" 25
+"(?<=[\s\]])CMP[ \t]+" A5
 
-"CMP #0x" 25
-"CMP 0x" A5
+#; RESERVED (0x)?26 (#) - (0x)?A6 (A)    - RESERVED
 
-#; RESERVED 0x26 (#) - 0xA6 (A)    - RESERVED
+"(?<=[\s\]])AND[ \t]+#(0x)?" 27
+"(?<=[\s\]])AND[ \t]+" A7
 
-"AND #0x" 27
-"AND 0x" A7
+"(?<=[\s\]])OR[ \t]+#(0x)?" 28
+"(?<=[\s\]])OR[ \t]+" A8
 
-"OR #0x" 28
-"OR 0x" A8
+"(?<=[\s\]])XOR[ \t]+#(0x)?" 29
+"(?<=[\s\]])XOR[ \t]+" A9
 
-"XOR #0x" 29
-"XOR 0x" A9
+"(?<=[\s\]])NND[ \t]+#(0x)?" 2A
+"(?<=[\s\]])NND[ \t]+" AA
 
-"NND #0x" 2A
-"NND 0x" AA
+"(?<=[\s\]])NOR[ \t]+#(0x)?" 2B
+"(?<=[\s\]])NOR[ \t]+" AB
 
-"NOR #0x" 2B
-"NOR 0x" AB
+"(?<=[\s\]])XNR[ \t]+#(0x)?" 2C
+"(?<=[\s\]])XNR[ \t]+#(0x)?" AC
 
-"XNR #0x" 2C
-"XNR #0x" AC
+"(?<=[\s\]])SHL[ \t]+#(0x)?" 2D
+"(?<=[\s\]])SHL[ \t]+" AD
 
-"SHL #0x" 2D
-"SHL 0x" AD
+"(?<=[\s\]])SHR[ \t]+#(0x)?" 2E
+"(?<=[\s\]])SHR[ \t]+" AE
 
-"SHR #0x" 2E
-"SHR 0x" AE
+"(?<=[\s\]])ROL[ \t]+#(0x)?" 2F
+"(?<=[\s\]])ROL[ \t]+" AF
 
-"ROL #0x" 2F
-"ROL 0x" AF
+"(?<=[\s\]])ROR[ \t]+#(0x)?" 30
+"(?<=[\s\]])ROR[ \t]+" B0
 
-"ROR #0x" 30
-"ROR 0x" B0
+"(?<=[\s\]])NOT[ \t]+#(0x)?" 2A
 
-"NOT #0x" 2A
-
-"NEG #0x" 2B
+"(?<=[\s\]])NEG[ \t]+#(0x)?" 2B

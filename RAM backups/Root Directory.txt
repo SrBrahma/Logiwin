@@ -1,17 +1,22 @@
 ; Root directory file
 _const:
-   F[0FA] "dir"         ; extension
-    [0FB] 0x1           ; filename length
-    [0FC] "root"        ; filename
-    [0FD] 0x0           ; parent address
+
+; root directory
+   F[0FA] 0x0           ; parent address
+    [0FB] "dir"         ; extension
+    [0FC] 0x1           ; filename length
+    [0FD] "root"        ; filename
+    
     [0FE] 0x0           ; flags
     [0FF] 0d32          ; data size
     [100] 0x120         ; data 0 -> \boot folder address
 
-   F[120] "dir"         ; extension
-    [121] 0x1           ; filename length
-    [122] "boot"        ; filename
-    [123] 0xFA          ; parent address
+; boot directory
+   F[120] 0xFA          ; parent address
+    [121] "dir"         ; extension
+    [122] 0x1           ; filename length
+    [123] "boot"        ; filename
+    
     [124] 0x0           ; flags
     [125] 0d00000       ; data size
     [126] 000001        ; data 0 -> \boot folder address
