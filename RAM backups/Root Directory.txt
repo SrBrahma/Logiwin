@@ -1,22 +1,94 @@
 ; Root directory file
 _const:
 
-; root directory
-   F[0FA] 0x0           ; parent address
-    [0FB] "dir"         ; extension
-    [0FC] 0x1           ; filename length
-    [0FD] "root"        ; filename
+; "/" (root) directory
+_rootDir: 
+   F[0FA] "dir"         ; Extension
+    [0FB] 0x1           ; Filename Length
+    [0FC] 0x0           ; Flags
+    [0FD] 0d32          ; Data Length
+    [0FE] 0x0           ; Parent Address
+    [0FF] "root"        ; Filename
+    [100] 0x0           ; Null (Header)
     
-    [0FE] 0x0           ; flags
-    [0FF] 0d32          ; data size
-    [100] 0x120         ; data 0 -> \boot folder address
+    [101] 0d2           ; Files inside
+    [102] _sysDir       ; Data {0} -> \sys directory Address
+    [103] _devDir       ; Data {1} -> \dev directory Address
+   +[029]
+    [12C] 0x0           ; Null (Directory)
+   
 
-; boot directory
-   F[120] 0xFA          ; parent address
-    [121] "dir"         ; extension
-    [122] 0x1           ; filename length
-    [123] "boot"        ; filename
+; "sys" directory
+_sysDir: 
+    [12D] "dir"         ; Extension
+    [12E] 0x1           ; Filename Length
+    [12F] 0x0           ; Flags
+    [130] 0d32          ; Data Length
+    [131] _rootDir      ; Parent Address
+    [132] "sys"         ; Filename
+    [133] 0x0           ; Null (Header)
     
-    [124] 0x0           ; flags
-    [125] 0d00000       ; data size
-    [126] 000001        ; data 0 -> \boot folder address
+    [134] 0d1           ; Files inside
+    [135] _bootDir
+   +[030]
+    [165] 0x0           ; Null (Directory)
+    
+; "boot" directory
+_bootDir: 
+    [166] "dir"         ; Extension
+    [167] 0x1           ; Filename Length
+    [168] 0x0           ; Flags
+    [169] 0d32          ; Data Length
+    [16A] _sysDir       ; Parent Address
+    [16B] "boot"        ; Filename
+    [16C] 0x0           ; Null (Header)
+    [16D] 0d0           ; Files inside
+   +[032]
+    [19F] 0x0           ; Null (Directory)
+    
+; "dev" directory
+_devDir: 
+    [1A0] "dir"         ; Extension
+    [1A1] 0x1           ; Filename Length
+    [1A2] 0x0           ; Flags
+    [1A3] 0d32          ; Data Length
+    [1A4] _rootDir      ; Parent Address
+    [1A5] "dev"         ; Filename
+    [1A6] 0x0           ; Null (Header)
+    
+    [1A7] 0d2           ; Files inside
+    [1A8] _ramDevDir    ; Data {0}
+    [1A9] _st00DevDir
+   +[01C]
+    [1C5] 0x0           ; Null (Directory)
+    
+; "ram" directory
+_ramDevDir: 
+    [1C6] "dir"         ; Extension
+    [1C7] 0x1           ; Filename Length
+    [1C8] 0x0           ; Flags
+    [1C9] 0d4           ; Data Length
+    [1CA] _devDir       ; Parent Address
+    [1CB] "ram"         ; Filename
+    [1CC] 0x0           ; Null (Header)
+    
+    [1CD] 0d0           ; Files inside
+   +[002]
+    [1CF] 0x0           ; Null (Directory)
+    
+; "st00" directory
+_st00DevDir: 
+    [1D0] "dir"         ; Extension
+    [1D1] 0x1           ; Filename Length
+    [1D2] 0x0           ; Flags
+    [1D3] 0d4           ; Data Length
+    [1D4] _devDir       ; Parent Address
+    [1D5] "st00"         ; Filename
+    [1D6] 0x0           ; Null (Header)
+    
+    [1D7] 0d0           ; Files inside
+   +[002]
+    [1D9] 0x0           ; Null (Directory)
+   
+
+   

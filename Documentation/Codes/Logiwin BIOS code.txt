@@ -1,0 +1,286 @@
+; BIOS code
+; By Henrique Bruno Fantauzzi de Almeida, Rio de Janeiro - RJ - Brazil
+;   (aka SrBrahma!)
+; To be compiled with "logiwinLASMcompiler.py", my code for Python Script, for Notepad++
+; https://github.com/SrBrahma/NotepadPlusPlus-Plugins/tree/master/Python%20Script
+; 
+; Written to be used on Logiwin, my Logisim computer project.
+; https://github.com/SrBrahma/Logiwin (more info about it on its Readme)
+;
+
+_global:
+                ;    ERROR 100: root directory not found.
+ 
+ER100_STR_LEN:     F[CD]  0x9
+ER100_STR:          [CE]  "ERRO"
+                    [CF]  "R 10"
+                    [D0]  "0: r"
+                    [D1]  "oot "
+                    [D2]  "dire"
+                    [D3]  "ctor"
+                    [D4]  "y no"
+                    [D5]  "t fo"
+                    [D6]  "und."
+                    
+                ;    ERROR 101: "boot" directory not found on "/".
+ER101_STR_LEN:      [D7]  0xC      ; Text word length
+ER101_STR:          [D8]  "ERRO"
+                    [D9]  "R 10"
+                    [DA]  "1: ""
+                    [DB]  "boot"
+                    [DC]  "" di"
+                    [DD]  "rect"
+                    [DE]  "ory "
+                    [DF]  "not "
+                    [E0]  "foun"
+                    [E1]  "d on"
+                    [E2]  " "/""
+                    [E3]  "."
+                    
+                ;    ERROR 102: "boot.exe" file not found on "/boot".
+ER102_STR_LEN:      [E4]  0xC      ; Text word length
+ER102_STR:          [E5]  "ERRO"
+                    [E6]  "R 10"
+                    [E7]  "2: ""
+                    [E8]  "boot"
+                    [E9]  ".exe"
+                    [EA]  "" fi"
+                    [EB]  "le n"
+                    [EC]  "ot f"
+                    [ED]  "ound"
+                    [EE]  " on "
+                    [EF]  ""/bo"
+                    [F0]  "ot"."
+                    
+                    
+ROOT_DIR_EXT:       [F1]  "dir"     ; These 3 to check the root directory
+ROOT_NAME_LEN:      [F2]  0x1
+ROOT_NAME:          [F3]  "root"
+
+SYS_DIR_EXT:        [11]  "dir"
+SYS_NAME_LEN:       [11]  0x1
+SYS_NAME:           [11]  "sys"
+
+BOOT_DIR_DIR_EXT:   [F4]  "dir"     ; boot directory
+BOOT_DIR_NAME_LEN:  [F5]  0x1
+BOOT_DIR_NAME:      [F6]  "boot"
+                
+BOOT_EXE_DIR_EXT:   [F7]  "exe"     ; boot executable
+BOOT_EXE_NAME_LEN:  [F8]  0x1
+BOOT_EXE_NAME:      [F9]  "boot"
+
+
+                        ; Checks if the Root directory exists
+_start:        F[00]  NOP #0x000000
+                [01]  NOP #0x000000
+                [02]  NOP #0x000000
+               F[03]  ACC 0x0000FB          ; Load the root extension
+                [04]  CMP ROOT_DIR_EXT      ; Compare with "dir"
+                [05]  JNE _rootDirNotFound
+                [06]  ACC 0x0000FC          ; root filename length
+                [07]  CMP ROOT_NAME_LEN     ; 1
+                [08]  JNE _rootDirNotFound
+                [09]  ACC 0x0000FD          ; root filename
+                [0A]  CMP ROOT_NAME         ; "root"
+                [0B]  JNE _rootDirNotFound
+                
+                        ; Find "boot" dir
+                [0C]  PSH .return1              ; Return Address (Call-like) 
+                [0D]  PSH #0x0000FF             ; root directory data size Address
+                [0E]  PSH BOOT_DIR_DIR_EXT      ; "dir" extension
+                [0F]  PSH BOOT_DIR_NAME_LEN     ; 1 = filename length in words
+                [10]  PSH &BOOT_DIR_NAME        ; First Address of the string (which is the only Address, as "boot" is 4 chars long (1 word))
+                [11]  JMP _searchFile
+.return1:       [12]  JZ _bootDirNotFound
+                        
+                        ; Find "boot" executable
+                [13]  PSH .return2              ; Return Address (Call-like)
+                [14]  PSH 0x000000              ; Push Accumulator content ("boot" dir first Address)
+                [15]  JMP _getFileDataSizeAddress
+.return2:       [16]  PSH .return3              ; Return Address (Call-like)
+                [17]  PSH 0x000000              ; Address of the boot directory data size, already on Accumulator (given by previous sub-routine called)
+                [18]  PSH BOOT_EXE_DIR_EXT      ; "exe" extension
+                [19]  PSH BOOT_EXE_NAME_LEN     ; 1 = filename length in words
+                [1A]  PSH BOOT_EXE_NAME         ; First Address of the string (which is the only Address, as "boot" is 4 chars long)
+                [1B]  JMP _searchFile
+.return3:       [1C]  JZ _bootExeNotFound
+                [1D]  JMP _foundBootExe
+
+
+
+
+
+;
+; _searchOneWordFile(targetParentAddress, desiredExtension, desiredFilenameAddress)
+;
+;   Search for a file of a maximum of 4 chars in a directory. The directory doesn't need to have <= 4 chars.
+;   Returns the Address of the file if found, else returns 0.
+;
+_local:
+    currentDirAddress: {}              ; Current File Address in directory of the searchen file
+
+    desiredExtension: {}                ; File extension in search
+    desiredFilenameAddress: {}     ; Filename first Address in search
+
+    currentAddressHeader: {}            ; Holds the actual Address of the actual header
+
+    currentAddressDesiredFilename: {}
+    currentContentDesiredFilename: {}
+    
+_searchOneWordFile:
+                [25]  POP &desiredFilenameAddress   ; desiredFilenameFirstAddress
+                [27]  POP &desiredExtension         ; desiredExtension
+                [28]  POP #0x0                      ; ParentDataSizeAddress
+
+                ; routine to skip parent directory "filename length" header
+                [11]  INC #0x0                      ; Now it points to the filename Length of the parent Dir
+                [11]  ACC 0x000000                  ; Loads the filename length to ACC
+                [11]  ADD currentDirAddress         ; Skips the directory filename
+                [11]  ADD 0d4                       ; Skips the remaining informations on header
+                [11]  STO &currentDirAddress
+                
+                        ; Checks if the Address of the file in the directory is 0 (end of file of a directory)
+.loopNextFile:  [31]  ACC 0x000000                  ; Acc = Address of the file, inside the actual directory
+                [32]  JZ .fileNotFound
+                
+                        ; Compares the extension
+                [34]  STO &currentAddressHeader     ; startingAddressCurrentFile
+                [35]  ACC 0x000000                  ; Get the content of given Address (Acc <- First content of file = Address of the file of the current root directory data)
+                [36]  CMP desiredExtension          ; Compare with the target filename extension    
+                [37]  JNE .loopNextFile
+                
+                        ; Compares the filename length
+                [38]  INC &currentAddressHeader     ; Increase the Address for the next header information, the filename length
+                [39]  ACC currentAddressHeader      ; Load this Address to Accumulator.
+                [3A]  ACC 0x000000                  ; Load the content of this Address
+                [3B]  CMP 0x1     ; Compare with the target filename length
+                [3C]  JNE .loopNextFile
+                
+                
+                [3E]  ACC desiredFilenameFirstAddress        ; desiredFilenameFirstAddress
+                [3F]  STO &currentAddressDesiredFilename     ; currentAddressDesiredFilename
+                    
+                    ; Compares the filename
+
+;
+; _searchFile(targetParentAddress, desiredExtension, desiredFilenameWords, desiredFilenameAddress)
+;
+;   Returns by the Accumulator the starting Address of the found file, else RET 0x000000urns 0
+;
+
+_local:
+    currentFileAddress: {}              ; Current File Address in directory of the searchen file
+
+    desiredExtension: {}                ; File extension in search
+    desiredFilenameLength: {}           ; Filename length (in words) in search
+    desiredFilenameFirstAddress: {}     ; Filename first Address in search
+
+    currentAddressHeader: {}            ; Holds the actual Address of the actual header
+
+    counterFilenameLength: {}   
+    currentAddressDesiredFilename: {}
+    currentContentDesiredFilename: {}
+
+_searchFile:    [25]  POP &desiredFilenameFirstAddress    ; desiredFilenameFirstAddress;
+                [26]  POP &desiredFilenameLength    ; desiredFilenameLength;
+                [27]  POP &desiredExtension         ; desiredExtension;
+                [28]  POP &currentFileAddress       ; ParentDataSizeAddress, store it on Accumulator
+
+                [11]  ACC currentFileAddress
+                
+                        
+                [31]  ACC 0x000000                  ; Acc = Address of the file, inside the actual directory
+                [32]  JZ .fileNotFound              ; Checks if the Address of the file in the directory is 0 (end of file of a directory)       
+                [34]  STO &currentAddressHeader     ; Saves which Address the actual header of the file is located
+                
+                ; Compares the extension
+                [35]  ACC 0x000000                  ; Get the content of given Address (Acc <- First content of file = Address of the file of the current root directory data)
+                [36]  CMP desiredExtension          ; Compare with the target filename extension    
+                [37]  JNE .loopNextFile
+                
+                        ; Compares the filename length
+                [38]  INC &currentAddressHeader     ; Increase the Address for the next header information, the filename length
+                [39]  ACC currentAddressHeader      ; Load this Address to Accumulator.
+                [3A]  ACC 0x000000                  ; Load the content of this Address
+                [3B]  CMP desiredFilenameLength     ; Compare with the target filename length
+                [3C]  JNE .loopNextFile
+                
+                [3D]  STO &counterFilenameLength    ; Stores the counter of the filename length for the next step
+                
+                [3E]  ACC desiredFilenameFirstAddress        ; desiredFilenameFirstAddress
+                [3F]  STO &currentAddressDesiredFilename     ; currentAddressDesiredFilename
+                    
+                    ; Compares the filename
+.compFilenameLoop:      
+                [40]  ACC currentAddressDesiredFilename     ; Load the desired Filename Address
+                [41]  ACC 0x000000                          ; Load the content of this Address
+                [42]  STO &currentContentDesiredFilename    ; Store the content
+                
+                [43]  INC &currentAddressHeader             ; Increase the Address for the next header information, the filename (and keeps increasing for the subsequent words)
+                [44]  ACC currentAddressHeader              ; Load to the Accumulator the Address of header
+                [45]  ACC 0x000000                          ; Load to the Accumulator the content of its Address
+                
+                [46]  CMP currentContentDesiredFilename     ; Compare with the header 
+                [47]  JNE .loopNextFile                     ; If name doesn't match, loop for another file.
+                
+                [4A]  JNZ .compFilenameLoop         ; Loop again if counter isn't zero
+                [4B]  ACC currentFileAddress        ; File found, return its Address      
+                [4C]  RET 0x000000
+                
+.fileNotFound:
+                [4D]  ACC #0x000000
+                [4E]  RET 0x000000
+; End _searchFile
+
+; _print(lengthWords, startingAddress)
+;
+;
+_local:
+    lengthInWords: {}
+    currentAddress: {}
+    maxAddress: {}
+    
+_printText:     [4F]  POP &currentAddress   ; Pop Current Address
+                [50]  POP &lengthInWords    ; Pop Length Words
+                [51]  ACC currentAddress
+                [52]  ADD lengthInWords
+                [53]  STO &maxAddress
+                [54]  ACC currentAddress    ; Load the current Address
+.loop:          [55]  ACC 0x000000          ; Load the content of this Address
+                [56]  TXT 0x000000          ; Prints the current content
+                [57]  INC &currentAddress   ; Increases the current Address
+                [58]  ACC currentAddress
+                [59]  CMP maxAddress
+                [5A]  JL .loop
+                [5B]  RET 0x000000
+; End of _printText
+                
+_rootDirNotFound:
+                [5C]  PSH .return1      ; Push return location
+                [5D]  PSH ER100_STR_LEN ; Push words amount
+                [5E]  PSH &ER100_STR    ; Push starting Address
+                [5F]  JMP _printText
+.return1:       [60]  JMP _deadEnd
+
+
+_bootDirNotFound:
+                [61]  PSH .return1      ; Push return location
+                [62]  PSH ER101_STR_LEN ; Push words amount
+                [63]  PSH &ER101_STR    ; Push starting Address
+                [64]  JMP _printText
+.return1:       [65]  JMP _deadEnd
+
+
+_bootExeNotFound:
+                [66]  PSH .return1      ; Push return location
+                [67]  PSH ER102_STR_LEN ; Push words amount
+                [68]  PSH &ER102_STR    ; Push starting Address
+                [69]  JMP _printText
+.return1:       [6A]  JMP _deadEnd
+
+
+_deadEnd:       [6B]  NOP #0x000000     ; Keeps repeating itself for ever, until system shutdown.
+                [6C]  JMP _deadEnd
+
+_foundBootExe:
+                [6D]  JMP 0x000000

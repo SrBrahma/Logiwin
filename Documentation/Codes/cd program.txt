@@ -1,0 +1,3 @@
+; Logiwin cd command
+; [admin@www.masswerk.at:2]$ cd dd                                                
+; /home/admin/dd: no such directory. 

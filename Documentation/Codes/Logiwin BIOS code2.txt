@@ -1,12 +1,4 @@
 ; BIOS code
-; By Henrique Bruno Fantauzzi de Almeida, Rio de Janeiro - RJ - Brazil
-;   (aka SrBrahma!)
-; To be compiled with "logiwinLASMcompiler.py", my code for Python Script, for Notepad++
-; https://github.com/SrBrahma/NotepadPlusPlus-Plugins/tree/master/Python%20Script
-; 
-; Written to be used on Logiwin, my Logisim computer project.
-; https://github.com/SrBrahma/Logiwin (more info about it on its Readme)
-;
 
 _global:
                 ;    ERROR 100: root directory not found.
@@ -107,6 +99,8 @@ _start:        F[00]  NOP #0x000000
 ;
 ;   Given the starting Address of a file, will RET 0x000000urn by the Accumulator the Address of the "Data Size" header of this file.
 ;
+; Variables
+;   0x40000A = Current Address
 ;
 _local:
     currentAddress: {}
@@ -147,7 +141,7 @@ _searchFile:    [25]  POP &desiredFilenameFirstAddress    ; desiredFilenameFirst
                 [29]  ACC currentFileAddress        ; Load it on Accumulator
                 [2A]  ACC 0x000000                  ; Get the content of the Address, the root data size, default = 32
                 [2B]  ADD currentFileAddress        ; Add the initial Address, to get the maximum Address to look for
-                [2C]  STO &maximumFileAddress       ; Store it at (Maximum Address in directory of the searchen file)
+                [2C]  STO &maximumFileAddress       ; Store it at 0x400001 (Maximum Address in directory of the searchen file)
                 
         ; Checks if the Address is in boundaries
 .loopNextFile:  [2D]  INC &currentFileAddress       ; Actual File Address ++
@@ -159,7 +153,7 @@ _searchFile:    [25]  POP &desiredFilenameFirstAddress    ; desiredFilenameFirst
                 [31]  ACC 0x000000                  ; Acc = Address of the file, inside the actual directory
                 [32]  JZ .fileNotFound
                     
-                [33]  INC #0x0                      ; Skips the first header information, the parent Address
+                [33]  INC &currentAddressHeader      ; Skips the first header information, the parent Address
                 
                         ; Compares the extension
                 [34]  STO &currentAddressHeader     ; startingAddressCurrentFile
@@ -204,13 +198,17 @@ _searchFile:    [25]  POP &desiredFilenameFirstAddress    ; desiredFilenameFirst
                 
 ; _print(lengthWords, startingAddress)
 ;
+; Variables
+;   0x40000B = Length Words
+;   0x40000C = Current Address
+;   0x40000D = Max Address
 ;
 _local:
     lengthInWords: {}
     currentAddress: {}
     maxAddress: {}
     
-_printText:     [4F]  POP &currentAddress   ; Pop Current Address
+_printText:     [4F]  POP &currentAddress    ; Pop Current Address
                 [50]  POP &lengthInWords    ; Pop Length Words
                 [51]  ACC currentAddress
                 [52]  ADD lengthInWords
@@ -242,8 +240,8 @@ _bootDirNotFound:
 
 _bootExeNotFound:
                 [66]  PSH .return1      ; Push return location
-                [67]  PSH ER102_STR_LEN ; Push words amount
-                [68]  PSH &ER102_STR    ; Push starting Address
+                [67]  PSH ER102_STR_LEN      ; Push words amount
+                [68]  PSH &ER102_STR     ; Push starting Address
                 [69]  JMP _printText
 .return1:       [6A]  JMP _deadEnd
                 

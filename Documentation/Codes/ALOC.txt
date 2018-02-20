@@ -1,0 +1,34 @@
+; ALOC
+
+"sys"
+length: {}
+fileDataSizeAddress: {}
+ramDataSizeAddress: {}
+
+;init
+; Get ram aloc.bin Address
+;
+
+
+;malloc(length)
+; Returns by the Accumulator the Address of the first allocated Address.
+; Will return 0 if any error found.
+; This function allocates volatile memory, on the default path "/dev/ram/aloc.bin"
+[] 
+
+;cmalloc(length, alocFileDataSizeAddress)
+; Returns by the Accumulator the Address of the first allocated Address.
+; Will return 0 if any error found.
+; This function allocates any type of memory, given the following Address to the Data Size of the aloc.bin file.
+
+
+; Search for a 
+
+; If allocated is == available mem in the block, remove this block and the reference
+
+; If allocated is < available mem in block, increase the starting memory, and shorten the length
+
+
+;free(address, length)
+
+;cfree(address, length, 

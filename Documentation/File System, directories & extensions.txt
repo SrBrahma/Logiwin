@@ -1,0 +1,135 @@
++#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+
+Logiwin System & File System
+Starting date: 07/02/2018 
+    17/02/2018
+
+Only intended to work with Logiwin Project, this simple file system targets performance in the low frequency of Logisim simulation.
+It doesn't support file fragmentation
+Again, I don't know to much about the already existing file systems
+
+LoFS = Logiwin File System
+Word = 32 bits; 4 bytes.
+LSB = Least significant bit. Starts at 0. (https://en.wikipedia.org/wiki/Bit_numbering)
+Null = 0x00000000. A word that only have zeroes; is = 0.
+
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+1) File System
+
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+
+2) System Directories tree
+
+    Similar to Unix system, pathes starts at root ("/").
+    / - Root directory
+        sys/ - System directory
+            boot/ - Boot directory
+        dev/ - Devices directory
+            ram/ - RAM, only have aloc.bin inside.
+            st00/ - Storage 0, the main default storage (Addresses 0x0 ~ 0x3FFFFF). Only have aloc.bin inside.
+            stXX/ - Additional external storage. Each will have their files and the aloc.bin.
+                // Names may change on future.
+. 
+.
+.
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+3) Files
+    
+    2.2.1) Header Structure
+    
+        All files must have this header:
+        
+        1) File Extension   [1]
+            No Null-terminated String with a maximum of 4 chars.
+            Besides from classifying the file, determines which program will run it by default.
+            
+        2) Filename Length  [1] = N
+            Number of words (group of 4 chars, 8 bits each) in Filename.
+            Ex: abcde.exe - Filename is abcde, 5 chars, so it's Filename Length is 2.
+            
+        3) Flags            [1]
+            WIP - Work in Progress. This holds flags, like Unmovable, Removed, Hidden, etc. Maybe will just be a
+            reserved section for the future.
+            
+        4) Data Length      [1]
+            Number of words (4 bytes) the data have.
+            
+        5) Parent Address   [1]
+            The Address where the the parent directory file is. If is the root directory file, this will be 0.
+            
+        6) Filename         [N]
+            String with its length determined by the Filename Length.
+            The name of the file. No null-terminating char ('\0'), but there must be a null word after this item.
+            
+        7) Null             [1]
+            0x00000000. Just a empty word, to improve filename comparation routines. (Jump if Zero etc)
+        
+        Total Size =        [6 + Filename_Length] 
+                                (also 6 + ceil(Filename_Chars / 4))
+                                
+        After this, comes the data.
+        
+        
+
+    2.2.2) .dir file
+        
+        The .dir file ends at a Null word. If the N-4 file address is 0, the .dir file has ended.
+        So, the files addresses must be sequential.
+        
+        .) Default File Header      [6 + Filename_Length]
+            (
+        1) Files Inside = N         [1]
+            The existing files inside this directory.
+            "Files Inside" <= "Data Size" - 2 ("Files inside" and "Null" items)
+            
+        2) Files Addresses          [N]
+            2.1) 1st File Address   [1]
+                The address of the first file.
+            2.N) Nth File Address   [1]
+                The address of the Nth file.      
+            2.N+1) End of Files     [1]
+                If there are no more files in the directory ("Data Size" > "Files Inside" + 2)
+                ("Files Inside" and the last "Null"), there must be a Null word (0x00000000) after the last file.
+
+        3) Null                     [1]
+            0x00000000. To speed up file search (so you can keep increasing the actual address until the content is 0x0).
+.
+.
+.        
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+.
+2.3) Memory Allocation
+
+    Every memory must have a aloc.bin at it's root directory.
+    
+    aloc.bin structure:
+    
+    .) Default File Header
+    
+    1) Blocks-Index Length = N
+        |How many Blocks-Indexes there are.|
+        
+    2) Blocks-Indexes
+         ________________________________________________________________________________________________________
+        |Each of the 32 bits represents the state of each block. If the bit is 1, it is being used, if 0, unused.|
+        |    Ex: 0b... 0000 0101
+        |        The block n°0 is being used (LSB 0)
+        |________The block n°1 is being unused (LSB 1)]__________________________________________________________
+        
+        2.1) Blocks-Index 1
+            
+        2.N) Blocks-Index N
+
+    3) 1st Block Relative Address
+        The address of the first block. Do not mistake with block n°1. The first block it the block n°X which
+        has the lowest starting address.
+    
+    4) Blocks
+        4.1) Block n°1 
+  ...) Nth Block 
+  
+  
++#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+

@@ -53,6 +53,14 @@ NUMBER:  [13] 0d999
     As the main documentation says, STO, POP, and other ambiguos instructions, should use the # notation, ex STO #0x10 to store to the Address 0x10.
     Following the previous section, & is converted to #, so when you come to the doubt of using & or not, think about using the # or not.
 
+5) Strings
+    [20] "abcd"
+    
+    [40] TXT 0x20
+    
+    or 
+    
+    [30] TXT "abc"
 5)    
 Recursive function
 

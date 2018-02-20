@@ -1,0 +1,14 @@
+; term.exe program
+;[Logiwin v1.1.0 - Magna Opera]
+;Type "help" for available commands.
+
+_start
+
+
+_printActualDir:
+[1] TXT  "aaa"
+directoryIndex:     {}
+directoryArray:     {} +{20}
+{}
+; _AsciiToHex(string
+;_hexToAscii: [2]
